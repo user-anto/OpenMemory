@@ -6,7 +6,7 @@ It lets you keep long-term context in a file store, browse commits/history, and 
 
 ---
 
-## GUI Setup (Only)
+## Setup
 
 ### 1. Prerequisites
 
