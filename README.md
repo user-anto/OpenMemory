@@ -1,4 +1,13 @@
-# OpenMemory
+<table>
+  <tr>
+    <td width="72">
+      <img src="./OpenMem%20logo.png" alt="OpenMemory logo" width="56" />
+    </td>
+    <td>
+      <h1>OpenMemory</h1>
+    </td>
+  </tr>
+</table>
 
 OpenMemory is a local memory layer for LLM conversations, with a GUI-first workflow.
 
