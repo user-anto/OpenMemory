@@ -1,10 +1,10 @@
 <table>
   <tr>
     <td width="72">
-      <img src="./OpenMem%20logo.png" alt="OpenMemory logo" width="56" />
+      <img src="./OpenMem%20logo.png" alt="OpenMemory logo" width="70" />
     </td>
     <td>
-      <h1>OpenMemory</h1>
+      <h1 style="font-size: 3rem; margin: 0;">OpenMemory</h1>
     </td>
   </tr>
 </table>
