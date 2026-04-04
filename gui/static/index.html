@@ -5,25 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>llm-memory GUI</title>
   <style>
-    @font-face {
-      font-family: "Gotham";
-      src: local("Gotham"), local("Gotham Book"), local("Gotham Medium");
-      font-style: normal;
-      font-weight: 400 800;
-    }
-
     :root {
-      --bg: #040816;
-      --panel: rgba(10, 16, 32, 0.72);
-      --panel-2: rgba(20, 30, 56, 0.7);
-      --panel-3: rgba(31, 44, 78, 0.55);
-      --text: #e5ecff;
-      --muted: #95a5c8;
-      --accent: #38bdf8;
-      --accent-2: #14b8a6;
+      --bg: #06111d;
+      --panel: rgba(8, 24, 39, 0.78);
+      --panel-2: rgba(18, 37, 56, 0.84);
+      --panel-3: rgba(23, 45, 68, 0.72);
+      --text: #eaf5ff;
+      --muted: #9bb2c9;
+      --accent: #22d3ee;
+      --accent-2: #34d399;
       --danger: #ef4444;
-      --border: rgba(154, 179, 227, 0.26);
-      --shadow: 0 14px 38px rgba(1, 4, 14, 0.52);
+      --warn: #f59e0b;
+      --border: rgba(115, 176, 214, 0.28);
+      --shadow: 0 20px 48px rgba(2, 10, 20, 0.45);
+      --shadow-soft: 0 10px 26px rgba(2, 10, 20, 0.28);
     }
 
     * { box-sizing: border-box; }
@@ -33,31 +28,31 @@
       min-height: 100vh;
       color: var(--text);
       background:
-        radial-gradient(circle at 12% 14%, rgba(56, 189, 248, 0.22) 0%, transparent 30%),
-        radial-gradient(circle at 82% 8%, rgba(20, 184, 166, 0.2) 0%, transparent 30%),
-        radial-gradient(circle at 75% 90%, rgba(59, 130, 246, 0.22) 0%, transparent 30%),
-        linear-gradient(145deg, #030712 0%, #061126 100%);
-      font-family: "Manrope", "Inter", "Segoe UI", sans-serif;
+        radial-gradient(circle at 8% 10%, rgba(34, 211, 238, 0.19) 0%, transparent 32%),
+        radial-gradient(circle at 88% 14%, rgba(52, 211, 153, 0.16) 0%, transparent 34%),
+        radial-gradient(circle at 70% 92%, rgba(56, 189, 248, 0.2) 0%, transparent 36%),
+        linear-gradient(150deg, #03070d 0%, #051426 55%, #081b29 100%);
+      font-family: "Sora", "Manrope", "Avenir Next", "Segoe UI", sans-serif;
       letter-spacing: 0.01em;
     }
 
     .shell {
       min-height: 100vh;
-      padding: 14px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
 
     .topbar {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      padding: 12px 14px;
-      border-radius: 16px;
+      gap: 18px;
+      padding: 14px 18px;
+      border-radius: 20px;
       border: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(10, 17, 35, 0.9), rgba(8, 14, 28, 0.72));
+      background: linear-gradient(130deg, rgba(7, 21, 35, 0.92), rgba(6, 16, 28, 0.74));
       box-shadow: var(--shadow);
     }
 
@@ -72,34 +67,38 @@
     }
 
     .brand-logo {
-      width: 58px;
-      height: 58px;
+      width: 64px;
+      height: 64px;
       object-fit: contain;
-      border-radius: 10px;
+      border-radius: 14px;
       border: 1px solid var(--border);
-      background: rgba(10, 16, 30, 0.55);
-      padding: 4px;
+      background: rgba(10, 26, 40, 0.58);
+      padding: 5px;
       flex: 0 0 auto;
+      box-shadow: inset 0 0 28px rgba(34, 211, 238, 0.09);
     }
 
     .brand-title {
-      font-family: "Gotham", "Montserrat", "Avenir Next", "Segoe UI", sans-serif;
-      font-size: 32px;
+      font-size: 34px;
       line-height: 1;
-      letter-spacing: 0.03em;
-      font-weight: 700;
+      letter-spacing: 0.045em;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(34, 211, 238, 0.18);
     }
 
     .brand-subtitle {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       margin-top: 4px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
     }
 
     .app {
       display: grid;
       grid-template-columns: 320px minmax(420px, 1fr) 460px;
-      gap: 14px;
+      gap: 16px;
       min-height: 0;
       flex: 1;
     }
@@ -108,23 +107,27 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-      gap: 10px;
-      padding: 14px;
-      border-radius: 16px;
+      gap: 11px;
+      padding: 16px;
+      border-radius: 18px;
       border: 1px solid var(--border);
-      background: linear-gradient(140deg, rgba(8, 14, 30, 0.9), rgba(8, 12, 24, 0.72));
+      background: linear-gradient(144deg, rgba(8, 25, 40, 0.93), rgba(8, 19, 33, 0.76));
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
     }
 
-    h2, h3 { margin: 0; }
-    h2 { font-size: 18px; }
-    h3 { font-size: 15px; margin-top: 4px; }
+    h2, h3 {
+      margin: 0;
+      font-family: "Sora", "Manrope", sans-serif;
+      letter-spacing: 0.02em;
+    }
+    h2 { font-size: 19px; font-weight: 700; }
+    h3 { font-size: 14px; margin-top: 4px; font-weight: 700; color: #cbe6ff; }
 
     .muted {
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     .row {
@@ -141,7 +144,7 @@
 
     input, textarea, select, button {
       color: var(--text);
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--panel-2);
       font: inherit;
@@ -149,7 +152,8 @@
 
     input, textarea, select {
       width: 100%;
-      padding: 9px 10px;
+      padding: 10px 12px;
+      box-shadow: inset 0 0 0 1px rgba(24, 55, 81, 0.25);
     }
 
     textarea { resize: vertical; }
@@ -157,22 +161,32 @@
     button {
       cursor: pointer;
       width: auto;
-      padding: 8px 11px;
-      transition: transform 120ms ease, border-color 120ms ease, filter 120ms ease;
+      padding: 9px 13px;
+      font-weight: 600;
+      transition: transform 120ms ease, border-color 120ms ease, filter 120ms ease, box-shadow 120ms ease;
     }
 
     button:hover {
       transform: translateY(-1px);
       filter: brightness(1.06);
+      box-shadow: var(--shadow-soft);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+      filter: none;
+      box-shadow: none;
     }
 
     button.primary {
-      background: linear-gradient(120deg, rgba(56, 189, 248, 0.35), rgba(20, 184, 166, 0.22));
-      border-color: rgba(88, 227, 255, 0.55);
+      background: linear-gradient(110deg, rgba(34, 211, 238, 0.4), rgba(52, 211, 153, 0.3));
+      border-color: rgba(88, 227, 255, 0.58);
     }
 
     button.ghost {
-      background: rgba(22, 32, 56, 0.66);
+      background: rgba(16, 37, 58, 0.74);
     }
 
     button.danger {
@@ -185,9 +199,10 @@
     .chat-log,
     .detail-box {
       overflow: auto;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid var(--border);
-      background: color-mix(in srgb, var(--panel-3) 78%, black 22%);
+      background: color-mix(in srgb, var(--panel-3) 84%, black 16%);
+      box-shadow: inset 0 0 0 1px rgba(41, 92, 135, 0.2);
     }
 
     .session-item,
@@ -206,11 +221,11 @@
 
     .session-item:hover,
     .commit-item:hover {
-      background: rgba(43, 65, 110, 0.36);
+      background: rgba(35, 82, 118, 0.4);
     }
 
     .selected {
-      background: rgba(38, 121, 129, 0.26);
+      background: rgba(30, 115, 122, 0.3);
       border-left: 2px solid rgba(56, 189, 248, 0.9);
       padding-left: 8px;
     }
@@ -222,35 +237,36 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 2px 8px;
-      background: rgba(45, 64, 102, 0.52);
+      background: rgba(23, 64, 90, 0.52);
     }
 
     .chat-log {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
     }
 
     .bubble {
-      padding: 10px;
-      border-radius: 10px;
+      padding: 10px 11px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       margin-bottom: 10px;
       white-space: pre-wrap;
       line-height: 1.45;
+      box-shadow: inset 0 0 0 1px rgba(83, 141, 188, 0.08);
     }
 
     .bubble.user {
-      background: rgba(30, 41, 75, 0.82);
+      background: rgba(23, 54, 93, 0.82);
     }
 
     .bubble.assistant {
-      background: rgba(15, 52, 46, 0.76);
+      background: rgba(14, 76, 65, 0.72);
     }
 
     .error,
     .ok {
-      border-radius: 10px;
-      padding: 9px;
+      border-radius: 12px;
+      padding: 9px 10px;
       white-space: pre-wrap;
       font-size: 13px;
     }
@@ -269,22 +285,22 @@
 
     .detail-box {
       flex: 1;
-      min-height: 280px;
-      max-height: 360px;
+      min-height: 300px;
+      max-height: 390px;
       padding: 12px;
       overflow: auto;
     }
 
     .commit-list {
-      min-height: 280px;
-      max-height: 360px;
+      min-height: 300px;
+      max-height: 390px;
       overflow: auto;
     }
 
     .detail-card {
       border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(25, 36, 64, 0.55);
+      border-radius: 13px;
+      background: rgba(18, 49, 74, 0.58);
       padding: 10px;
       margin-bottom: 10px;
     }
@@ -293,7 +309,7 @@
       font-size: 12px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #9cc6ff;
+      color: #97def7;
       margin-bottom: 6px;
     }
 
@@ -325,7 +341,7 @@
     }
 
     .commit-summary {
-      color: #c0d2f2;
+      color: #c4dcf4;
       font-size: 12px;
       line-height: 1.45;
       margin-top: 6px;
@@ -338,9 +354,9 @@
 
     details.manual-commit {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 8px;
-      background: rgba(17, 27, 50, 0.55);
+      background: rgba(10, 33, 53, 0.62);
     }
 
     details.manual-commit summary {
@@ -348,6 +364,22 @@
       color: var(--muted);
       font-size: 12px;
       margin-bottom: 8px;
+    }
+
+    .status-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .metric {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: rgba(19, 58, 84, 0.6);
+      color: #d8eeff;
     }
 
     .placeholder {
@@ -362,11 +394,29 @@
       }
 
       .brand-title {
-        font-size: 26px;
+        font-size: 25px;
       }
 
       .app {
         grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .panel {
+        border-radius: 14px;
+      }
+    }
+
+    @media (max-width: 740px) {
+      .row {
+        flex-wrap: wrap;
+      }
+      .brand-logo {
+        width: 54px;
+        height: 54px;
+      }
+      .status-metrics {
+        gap: 6px;
       }
     }
   </style>
@@ -419,6 +469,7 @@
     <section class="panel stack">
       <h2>Chat</h2>
       <div id="statusLine" class="muted">Loading...</div>
+      <div id="statusMetrics" class="status-metrics"></div>
       <div id="chatLog" class="chat-log"></div>
       <textarea id="chatInput" rows="4" placeholder="Type a message"></textarea>
       <div class="row">
@@ -466,15 +517,23 @@
         headers: body ? { "Content-Type": "application/json" } : {},
         body: body ? JSON.stringify(body) : null,
       });
+      const text = await res.text();
+      let payload = null;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = null;
+        }
+      }
       if (!res.ok) {
         let detail = `${res.status} ${res.statusText}`;
-        try {
-          const payload = await res.json();
+        if (payload && typeof payload === "object") {
           detail = payload.detail || detail;
-        } catch {}
+        }
         throw new Error(detail);
       }
-      return await res.json();
+      return payload || {};
     }
 
     function escapeHtml(text) {
@@ -510,6 +569,31 @@
       return cleaned.length > max ? `${cleaned.slice(0, max)}...` : cleaned;
     }
 
+    function setActionButtonsState() {
+      const disabled = !currentSlug;
+      for (const id of ["linkModel", "unlinkModel", "sendChat", "commitNow", "discardNow", "refreshStatus", "refreshCommits"]) {
+        document.getElementById(id).disabled = disabled;
+      }
+    }
+
+    function requireSession(messageTarget) {
+      if (currentSlug) return true;
+      setMessage(messageTarget, "Create or choose a session first.");
+      return false;
+    }
+
+    function renderStatusMetrics(status) {
+      const el = document.getElementById("statusMetrics");
+      const stagedCount = Number(status?.staged_message_count || 0);
+      const linked = status?.linked_model_id ? status.linked_model_id : "none";
+      const hasSummary = (status?.summary || "").trim() ? "yes" : "no";
+      el.innerHTML = `
+        <span class="metric">linked: ${escapeHtml(linked)}</span>
+        <span class="metric">staged: ${stagedCount}</span>
+        <span class="metric">summary: ${hasSummary}</span>
+      `;
+    }
+
     async function loadSettings() {
       const settings = await api("/api/settings");
       document.getElementById("memoryPath").value = settings.memory_store_path;
@@ -529,11 +613,16 @@
     }
 
     function renderSessions(data) {
-      currentSlug = data.current_slug;
+      const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      currentSlug = data.current_slug || (sessions[0] && sessions[0].slug) || null;
       const box = document.getElementById("sessions");
       box.innerHTML = "";
 
-      for (const s of data.sessions) {
+      if (!sessions.length) {
+        box.innerHTML = `<div class="placeholder">No sessions yet. Create one to begin.</div>`;
+      }
+
+      for (const s of sessions) {
         const div = document.createElement("div");
         div.className = "session-item" + (s.slug === currentSlug ? " selected" : "");
         const linkBadge = s.linked_model_id
@@ -554,6 +643,7 @@
         };
         box.appendChild(div);
       }
+      setActionButtonsState();
     }
 
     async function loadSessions() {
@@ -562,9 +652,15 @@
     }
 
     async function loadStatus() {
-      const status = await api(`/api/status?session_slug=${encodeURIComponent(currentSlug || "")}`);
       const line = document.getElementById("statusLine");
+      if (!currentSlug) {
+        line.textContent = "No active session selected.";
+        document.getElementById("statusMetrics").innerHTML = "";
+        return;
+      }
+      const status = await api(`/api/status?session_slug=${encodeURIComponent(currentSlug || "")}`);
       line.textContent = `Session: ${status.session_name} (${status.session_slug}) | Branch: ${status.branch} | HEAD: ${shortSha(status.head)} | Linked: ${status.linked_model_id || "none"} | Staged: ${status.staged_message_count}`;
+      renderStatusMetrics(status);
     }
 
     function renderCommitList(commits) {
@@ -611,6 +707,12 @@
     }
 
     async function loadCommits() {
+      if (!currentSlug) {
+        renderCommitList([]);
+        document.getElementById("commitDetail").innerHTML = `<div class="placeholder">Select a session to view history.</div>`;
+        renderChatLog([]);
+        return;
+      }
       const commits = await api(`/api/commits?limit=50&session_slug=${encodeURIComponent(currentSlug || "")}`);
       if (selectedCommitSha && !commits.some((c) => c.sha === selectedCommitSha)) {
         selectedCommitSha = null;
@@ -631,8 +733,10 @@
 
     async function loadCommitDetail(sha) {
       const detail = await api(`/api/commits/${encodeURIComponent(sha)}?session_slug=${encodeURIComponent(currentSlug || "")}`);
-      const ctx = detail.tree.context || {};
-      const messages = detail.tree.messages || [];
+      const tree = detail.tree || {};
+      const ctx = tree.context || {};
+      const messages = Array.isArray(tree.messages) ? tree.messages : [];
+      const author = detail.author || {};
       const decisions = (ctx.decisions || []).map((d) => `${d.decision}: ${d.rationale}`);
 
       const html = `
@@ -642,7 +746,7 @@
           <div class="detail-meta mono">
             <div class="detail-key">SHA</div><div class="detail-value">${escapeHtml(detail.sha || "")}</div>
             <div class="detail-key">Parent</div><div class="detail-value">${escapeHtml(detail.parent || "none")}</div>
-            <div class="detail-key">Author</div><div class="detail-value">${escapeHtml(detail.author.model)} (${escapeHtml(detail.author.provider)})</div>
+            <div class="detail-key">Author</div><div class="detail-value">${escapeHtml(author.model || "unknown")} (${escapeHtml(author.provider || "unknown")})</div>
             <div class="detail-key">Date</div><div class="detail-value">${fmtDate(detail.timestamp)}</div>
             <div class="detail-key">Messages</div><div class="detail-value">${messages.length}</div>
           </div>
@@ -702,6 +806,7 @@
     }
 
     async function onLinkModel() {
+      if (!requireSession("linkMsg")) return;
       const modelId = document.getElementById("modelSelect").value;
       try {
         await api("/api/sessions/link", "POST", { session_slug: currentSlug, model_id: modelId });
@@ -713,6 +818,7 @@
     }
 
     async function onUnlinkModel() {
+      if (!requireSession("linkMsg")) return;
       try {
         await api("/api/sessions/unlink", "POST", { session_slug: currentSlug });
         setMessage("linkMsg", `Unlinked model from ${currentSlug}. Staged memory auto-committed when present.`, true);
@@ -723,6 +829,7 @@
     }
 
     async function onSendChat() {
+      if (!requireSession("chatMsg")) return;
       const input = document.getElementById("chatInput");
       const user_message = input.value.trim();
       if (!user_message) return;
@@ -743,6 +850,7 @@
     }
 
     async function onCommitNow() {
+      if (!requireSession("chatMsg")) return;
       const message = document.getElementById("commitMessage").value.trim();
       const summary = document.getElementById("commitSummary").value.trim();
       const payload = { session_slug: currentSlug };
@@ -762,6 +870,7 @@
     }
 
     async function onDiscardNow() {
+      if (!requireSession("chatMsg")) return;
       try {
         const out = await api("/api/chat/discard", "POST", { session_slug: currentSlug });
         setMessage("chatMsg", `Discarded ${out.discarded} staged messages.`, true);
@@ -803,7 +912,14 @@
     document.getElementById("browseSettings").onclick = onBrowseSettings;
     document.getElementById("refreshStatus").onclick = loadStatus;
     document.getElementById("refreshCommits").onclick = loadCommits;
+    document.getElementById("chatInput").addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        onSendChat();
+      }
+    });
 
+    setActionButtonsState();
     refreshAll().catch((err) => {
       setMessage("chatMsg", err.message);
     });
