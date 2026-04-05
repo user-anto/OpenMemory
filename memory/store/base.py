@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from memory.models import Commit, CompactionState, Session, SessionNamespace
+from memory.models import Commit, CompactionState, SearchIndexData, Session, SessionNamespace
 
 
 class BaseStore(ABC):
@@ -75,3 +75,11 @@ class BaseStore(ABC):
 
     @abstractmethod
     def read_compaction_state(self) -> CompactionState: ...
+
+    # ── Search index ───────────────────────────────────────────────────────────
+
+    @abstractmethod
+    def write_search_index(self, index: SearchIndexData) -> None: ...
+
+    @abstractmethod
+    def read_search_index(self) -> SearchIndexData: ...
