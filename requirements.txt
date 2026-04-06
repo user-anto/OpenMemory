@@ -35,8 +35,6 @@ jsonschema==4.26.0
 jsonschema-path==0.4.5
 jsonschema-specifications==2025.9.1
 keyring==25.7.0
-# Editable install with no version control (llm-memory==0.1.0)
--e /home/ranta_unix/projects/openmem
 markdown-it-py==4.0.0
 mcp==1.27.0
 mdurl==0.1.2
