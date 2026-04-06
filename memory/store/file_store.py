@@ -6,11 +6,12 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from memory.models import Commit, CompactionState, Session, SessionNamespace
+from memory.models import Commit, CompactionState, SearchIndexData, Session, SessionNamespace
 from memory.store.base import BaseStore
 
 _ACTIVE_SESSION_FILE = "active_session.json"
 _COMPACTION_STATE_FILE = "compaction_state.json"
+_SEARCH_INDEX_FILE = "search_index.json"
 _HEAD_FILE = "HEAD"
 _CURRENT_NAMESPACE_FILE = "CURRENT_SESSION"
 _NAMESPACE_INDEX_FILE = "index.json"
@@ -81,6 +82,9 @@ class FileStore(BaseStore):
 
     def _namespace_compaction_state_file(self, slug: str | None = None) -> Path:
         return self._namespace_dir(slug or self._active_slug()) / _COMPACTION_STATE_FILE
+
+    def _namespace_search_index_file(self, slug: str | None = None) -> Path:
+        return self._namespace_dir(slug or self._active_slug()) / _SEARCH_INDEX_FILE
 
     # ── Namespace internals ────────────────────────────────────────────────────
 
@@ -222,7 +226,7 @@ class FileStore(BaseStore):
 
     def write_commit(self, commit: Commit) -> None:
         path = self._namespace_commits_dir() / f"{commit.sha}.json"
-        path.write_text(commit.model_dump_json(indent=2))
+        self._write_text_atomic(path, commit.model_dump_json(indent=2))
 
     def read_commit(self, sha: str) -> Commit:
         path = self._namespace_commits_dir() / f"{sha}.json"
@@ -233,7 +237,7 @@ class FileStore(BaseStore):
     # ── Session ────────────────────────────────────────────────────────────────
 
     def write_session(self, session: Session) -> None:
-        self._namespace_session_file().write_text(session.model_dump_json(indent=2))
+        self._write_text_atomic(self._namespace_session_file(), session.model_dump_json(indent=2))
 
     def read_session(self) -> Session | None:
         path = self._namespace_session_file()
@@ -260,7 +264,7 @@ class FileStore(BaseStore):
     # ── Refs ───────────────────────────────────────────────────────────────────
 
     def write_ref(self, branch: str, sha: str) -> None:
-        (self._namespace_refs_dir() / branch).write_text(sha)
+        self._write_text_atomic(self._namespace_refs_dir() / branch, sha)
 
     def read_ref(self, branch: str) -> str | None:
         path = self._namespace_refs_dir() / branch
@@ -275,7 +279,7 @@ class FileStore(BaseStore):
     # ── Tags ───────────────────────────────────────────────────────────────────
 
     def write_tag(self, name: str, sha: str) -> None:
-        (self._namespace_tags_dir() / name).write_text(sha)
+        self._write_text_atomic(self._namespace_tags_dir() / name, sha)
 
     def read_tag(self, name: str) -> str | None:
         path = self._namespace_tags_dir() / name
@@ -290,7 +294,7 @@ class FileStore(BaseStore):
     # ── HEAD ───────────────────────────────────────────────────────────────────
 
     def write_head(self, branch: str) -> None:
-        self._namespace_head_file().write_text(branch)
+        self._write_text_atomic(self._namespace_head_file(), branch)
 
     def read_head(self) -> str:
         return self._namespace_head_file().read_text().strip()
@@ -314,3 +318,23 @@ class FileStore(BaseStore):
             return CompactionState.model_validate_json(raw)
         except Exception:
             return CompactionState()
+
+    # ── Search index ───────────────────────────────────────────────────────────
+
+    def write_search_index(self, index: SearchIndexData) -> None:
+        self._write_text_atomic(
+            self._namespace_search_index_file(),
+            index.model_dump_json(indent=2),
+        )
+
+    def read_search_index(self) -> SearchIndexData:
+        path = self._namespace_search_index_file()
+        if not path.exists():
+            return SearchIndexData()
+        raw = path.read_text().strip()
+        if not raw:
+            return SearchIndexData()
+        try:
+            return SearchIndexData.model_validate_json(raw)
+        except Exception:
+            return SearchIndexData()

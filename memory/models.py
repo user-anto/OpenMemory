@@ -173,6 +173,24 @@ class SearchResult(BaseModel):
     hits: list[SearchHit] = Field(default_factory=list)
 
 
+# ── Search index (persistent inverted index) ─────────────────────────────────
+
+class IndexDocument(BaseModel):
+    """Lightweight commit metadata stored in the search index."""
+    message: str
+    summary: str
+    topics: list[str] = Field(default_factory=list)
+    timestamp: datetime
+
+
+class SearchIndexData(BaseModel):
+    """Persistent search index: inverted postings + forward document table."""
+    version: int = 1
+    head_sha: str | None = None
+    documents: dict[str, IndexDocument] = Field(default_factory=dict)
+    postings: dict[str, dict[str, float]] = Field(default_factory=dict)
+
+
 class CompactionState(BaseModel):
     status: Literal["idle", "running", "succeeded", "failed"] = "idle"
     sha: str | None = None

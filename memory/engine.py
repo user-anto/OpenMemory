@@ -30,11 +30,13 @@ from memory.models import (
     CompactionStatusResult,
     Context,
     Decision,
+    IndexDocument,
     LogEntry,
     Message,
     ReadBudgetResult,
     ReadWindowResult,
     SearchHit,
+    SearchIndexData,
     SearchResult,
     Session,
     SessionNamespaceListResult,
@@ -343,6 +345,13 @@ def commit(
     branch = store.read_head()
     store.write_ref(branch, new_commit.sha)
 
+    # Eagerly update the search index if it's in sync.
+    index = store.read_search_index()
+    if index.head_sha == parent_sha:
+        _index_commit(index, new_commit)
+        index.head_sha = new_commit.sha
+        store.write_search_index(index)
+
     # Reset staging area, preserve session identity.
     session.staged_messages = []
     session.staged_decisions = []
@@ -443,16 +452,75 @@ def _score_text(text: str, terms: list[str]) -> int:
     return sum(normalized.count(term) for term in terms)
 
 
-def search(store: BaseStore, query: str, limit: int = 5) -> SearchResult:
-    if not query.strip():
-        raise ValueError("query must not be empty")
-    if limit <= 0:
-        return SearchResult(query=query, hits=[])
+# ── Search index helpers ──────────────────────────────────────────────────────
 
-    terms = _SEARCH_TERM_RE.findall(query.lower())
-    if not terms:
-        return SearchResult(query=query, hits=[])
+def _tokenize(text: str) -> list[str]:
+    """Extract lowercase alphanumeric terms from text."""
+    return _SEARCH_TERM_RE.findall(text.lower())
 
+
+def _index_commit(index: SearchIndexData, commit_obj: Commit) -> None:
+    """Add or update a single commit's entries in the index (mutates in place)."""
+    sha = commit_obj.sha
+    ctx = commit_obj.tree.context
+
+    # Remove old postings for this sha if re-indexing (e.g. after compaction)
+    if sha in index.documents:
+        for term, sha_scores in list(index.postings.items()):
+            sha_scores.pop(sha, None)
+            if not sha_scores:
+                del index.postings[term]
+
+    # Build weighted term scores across all fields
+    field_texts_and_weights: list[tuple[str, int]] = [
+        (commit_obj.message, 6),
+        (ctx.summary, 5),
+        (" ".join(ctx.topics), 4),
+        (" ".join(f"{d.decision} {d.rationale}" for d in ctx.decisions), 3),
+        (" ".join(m.content for m in commit_obj.tree.messages), 1),
+    ]
+
+    term_scores: dict[str, float] = {}
+    for text, weight in field_texts_and_weights:
+        for term in set(_tokenize(text)):
+            count = text.lower().count(term)
+            term_scores[term] = term_scores.get(term, 0.0) + count * weight
+
+    # Update forward document table
+    index.documents[sha] = IndexDocument(
+        message=commit_obj.message,
+        summary=ctx.summary,
+        topics=ctx.topics,
+        timestamp=commit_obj.timestamp,
+    )
+
+    # Update inverted postings
+    for term, score in term_scores.items():
+        if term not in index.postings:
+            index.postings[term] = {}
+        index.postings[term][sha] = score
+
+
+def rebuild_index(store: BaseStore) -> SearchIndexData:
+    """Walk the full commit chain and build the search index from scratch."""
+    index = SearchIndexData()
+    sha = _head_sha(store)
+
+    while sha:
+        commit_obj = store.read_commit(sha)
+        _index_commit(index, commit_obj)
+        sha = commit_obj.parent
+
+    index.head_sha = _head_sha(store)
+    store.write_search_index(index)
+    log.info("Search index rebuilt: %d documents indexed", len(index.documents))
+    return index
+
+
+def _search_brute_force(
+    store: BaseStore, query: str, terms: list[str], limit: int,
+) -> SearchResult:
+    """Original O(n) brute-force search — used as fallback."""
     sha = _head_sha(store)
     depth = 0
     candidates: list[tuple[float, int, SearchHit]] = []
@@ -468,7 +536,9 @@ def search(store: BaseStore, query: str, limit: int = 5) -> SearchResult:
         score += _score_text(
             " ".join(f"{d.decision} {d.rationale}" for d in ctx.decisions), terms
         ) * 3
-        score += _score_text(" ".join(m.content for m in commit_obj.tree.messages), terms) * 1
+        score += _score_text(
+            " ".join(m.content for m in commit_obj.tree.messages), terms
+        ) * 1
 
         if score > 0:
             candidates.append(
@@ -490,6 +560,61 @@ def search(store: BaseStore, query: str, limit: int = 5) -> SearchResult:
 
     candidates.sort(key=lambda x: (-x[0], x[1]))
     return SearchResult(query=query, hits=[item[2] for item in candidates[:limit]])
+
+
+def search(store: BaseStore, query: str, limit: int = 5) -> SearchResult:
+    if not query.strip():
+        raise ValueError("query must not be empty")
+    if limit <= 0:
+        return SearchResult(query=query, hits=[])
+
+    terms = _SEARCH_TERM_RE.findall(query.lower())
+    if not terms:
+        return SearchResult(query=query, hits=[])
+
+    # Try indexed search
+    index = store.read_search_index()
+    head = _head_sha(store)
+
+    if not index.documents or index.head_sha != head:
+        # Index is stale or missing — rebuild, then use it
+        if head:
+            log.info("Search index stale or missing, rebuilding...")
+            index = rebuild_index(store)
+        else:
+            return SearchResult(query=query, hits=[])
+
+    # Aggregate scores from inverted postings
+    sha_scores: dict[str, float] = {}
+    for term in terms:
+        postings = index.postings.get(term, {})
+        for sha, score in postings.items():
+            sha_scores[sha] = sha_scores.get(sha, 0.0) + score
+
+    if not sha_scores:
+        return SearchResult(query=query, hits=[])
+
+    # Build hits from the forward document table
+    hits: list[tuple[float, datetime, SearchHit]] = []
+    for sha, total_score in sha_scores.items():
+        doc = index.documents.get(sha)
+        if not doc:
+            continue
+        hits.append((
+            total_score,
+            doc.timestamp,
+            SearchHit(
+                sha=sha,
+                score=total_score,
+                message=doc.message,
+                summary=doc.summary,
+                topics=doc.topics,
+            ),
+        ))
+
+    # Sort by score desc, then timestamp desc (recency tiebreaker)
+    hits.sort(key=lambda x: (-x[0], -x[1].timestamp()))
+    return SearchResult(query=query, hits=[h[2] for h in hits[:limit]])
 
 
 async def _call_llm(prompt: str) -> str:
@@ -573,6 +698,11 @@ async def _run_compaction(store: BaseStore, sha: str) -> None:
         commit_obj.tree.metadata.compacted = True
         commit_obj.tree.metadata.compacted_up_to_index = len(to_summarize)
         store.write_commit(commit_obj)
+
+        # Re-index the mutated commit so search reflects compacted content.
+        index = store.read_search_index()
+        _index_commit(index, commit_obj)
+        store.write_search_index(index)
 
         store.write_compaction_state(
             CompactionState(
